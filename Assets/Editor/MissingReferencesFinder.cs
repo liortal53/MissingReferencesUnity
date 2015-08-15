@@ -18,7 +18,7 @@ public class MissingReferencesFinder : MonoBehaviour
 		foreach (var scene in EditorBuildSettings.scenes.Where(s => s.enabled))
 		{
 			EditorApplication.OpenScene(scene.path);
-			FindMissingReferences(scene.path, Resources.FindObjectsOfTypeAll<GameObject>());
+			FindMissingReferences(scene.path, GetSceneObjects());
 		}
 	}
 
