@@ -15,7 +15,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	[MenuItem("Tools/Show Missing Object References in all scenes", false, 51)]
 	public static void MissingSpritesInAllScenes()
 	{
-		foreach (var scene in EditorBuildSettings.scenes)
+		foreach (var scene in EditorBuildSettings.scenes.Where(s => s.enabled))
 		{
 			EditorApplication.OpenScene(scene.path);
 			FindMissingReferences(scene.path, Resources.FindObjectsOfTypeAll<GameObject>());
