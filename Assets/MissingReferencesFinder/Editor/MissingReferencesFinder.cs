@@ -3,28 +3,44 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
+/// <summary>
+/// A helper editor script for finding missing references to objects.
+/// </summary>
 public class MissingReferencesFinder : MonoBehaviour 
 {
-	[MenuItem("Tools/Show Missing Object References in scene", false, 50)]
+	private const string MENU_ROOT = "Tools/Missing References/";
+
+	/// <summary>
+	/// Finds all missing references to objects in the currently loaded scene.
+	/// </summary>
+	[MenuItem(MENU_ROOT + "Search in scene", false, 50)]
 	public static void FindMissingReferencesInCurrentScene()
 	{
-		var objects = GetSceneObjects();
-		FindMissingReferences(EditorApplication.currentScene, objects);
+		var sceneObjects = GetSceneObjects();
+		FindMissingReferences(EditorApplication.currentScene, sceneObjects);
 	}
 
-	[MenuItem("Tools/Show Missing Object References in all scenes", false, 51)]
+	/// <summary>
+	/// Finds all missing references to objects in all enabled scenes in the project.
+	/// This works by loading the scenes one by one and checking for missing object references.
+	/// </summary>
+	[MenuItem(MENU_ROOT + "Search in all scenes", false, 51)]
 	public static void MissingSpritesInAllScenes()
 	{
 		foreach (var scene in EditorBuildSettings.scenes.Where(s => s.enabled))
 		{
 			EditorApplication.OpenScene(scene.path);
-			FindMissingReferences(scene.path, GetSceneObjects());
+			FindMissingReferencesInCurrentScene();
 		}
 	}
 
-	[MenuItem("Tools/Show Missing Object References in assets", false, 52)]
+	/// <summary>
+	/// Finds all missing references to objects in assets (objects from the project window).
+	/// </summary>
+	[MenuItem(MENU_ROOT + "Search in assets", false, 52)]
 	public static void MissingSpritesInAssets()
 	{
+		var all = AssetDatabase.FindAssets(string.Empty).Select(guid => AssetDatabase.GUIDToAssetPath(guid)).ToArray();
 		var allAssets = AssetDatabase.GetAllAssetPaths();
 		var objs = allAssets.Select(a => AssetDatabase.LoadAssetAtPath(a, typeof(GameObject)) as GameObject).Where(a => a != null).ToArray();
 		
@@ -39,15 +55,17 @@ public class MissingReferencesFinder : MonoBehaviour
 			
 			foreach (var c in components)
 			{
+				// Missing components will be null, we can't find their type, etc.
 				if (!c)
 				{
-					Debug.LogError("Missing Component in GO: " + FullPath(go), go);
+					Debug.LogError("Missing Component in GO: " + GetFullPath(go), go);
 					continue;
 				}
 				
 				SerializedObject so = new SerializedObject(c);
 				var sp = so.GetIterator();
-				
+
+				// Iterate over the components' properties.
 				while (sp.NextVisible(true))
 				{
 					if (sp.propertyType == SerializedPropertyType.ObjectReference)
@@ -65,22 +83,23 @@ public class MissingReferencesFinder : MonoBehaviour
 
 	private static GameObject[] GetSceneObjects()
 	{
+		// Use this method since GameObject.FindObjectsOfType will not return disabled objects.
 		return Resources.FindObjectsOfTypeAll<GameObject>()
 			.Where(go => string.IsNullOrEmpty(AssetDatabase.GetAssetPath(go))
 			       && go.hideFlags == HideFlags.None).ToArray();
 	}
-	
-	private const string err = "Missing Ref in: [{3}]{0}. Component: {1}, Property: {2}";
-	
-	private static void ShowError (string context, GameObject go, string c, string property)
+		
+	private static void ShowError (string context, GameObject go, string componentName, string propertyName)
 	{
-		Debug.LogError(string.Format(err, FullPath(go), c, property, context), go);
+		var ERROR_TEMPLATE = "Missing Ref in: [{3}]{0}. Component: {1}, Property: {2}";
+
+		Debug.LogError(string.Format(ERROR_TEMPLATE, GetFullPath(go), componentName, propertyName, context), go);
 	}
 	
-	private static string FullPath(GameObject go)
+	private static string GetFullPath(GameObject go)
 	{
 		return go.transform.parent == null
 			? go.name
-				: FullPath(go.transform.parent.gameObject) + "/" + go.name;
+				: GetFullPath(go.transform.parent.gameObject) + "/" + go.name;
 	}
 }
