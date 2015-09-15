@@ -40,7 +40,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	[MenuItem(MENU_ROOT + "Search in assets", false, 52)]
 	public static void MissingSpritesInAssets()
 	{
-		var allAssets = AssetDatabase.GetAllAssetPaths();
+		var allAssets = AssetDatabase.GetAllAssetPaths().Where(path => path.StartsWith("Assets/")).ToArray();
 		var objs = allAssets.Select(a => AssetDatabase.LoadAssetAtPath(a, typeof(GameObject)) as GameObject).Where(a => a != null).ToArray();
 		
 		FindMissingReferences("Project", objs);
