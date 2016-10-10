@@ -1,12 +1,13 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.SceneManagement;
 
 /// <summary>
 /// A helper editor script for finding missing references to objects.
 /// </summary>
-public class MissingReferencesFinder : MonoBehaviour 
+public class MissingReferencesFinder : MonoBehaviour
 {
 	private const string MENU_ROOT = "Tools/Missing References/";
 
@@ -17,7 +18,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	public static void FindMissingReferencesInCurrentScene()
 	{
 		var sceneObjects = GetSceneObjects();
-		FindMissingReferences(EditorApplication.currentScene, sceneObjects);
+		FindMissingReferences(EditorSceneManager.GetActiveScene().name, sceneObjects);
 	}
 
 	/// <summary>
@@ -29,7 +30,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	{
 		foreach (var scene in EditorBuildSettings.scenes.Where(s => s.enabled))
 		{
-			EditorApplication.OpenScene(scene.path);
+			EditorSceneManager.OpenScene (scene.path);
 			FindMissingReferencesInCurrentScene();
 		}
 	}
@@ -42,7 +43,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	{
 		var allAssets = AssetDatabase.GetAllAssetPaths().Where(path => path.StartsWith("Assets/")).ToArray();
 		var objs = allAssets.Select(a => AssetDatabase.LoadAssetAtPath(a, typeof(GameObject)) as GameObject).Where(a => a != null).ToArray();
-		
+
 		FindMissingReferences("Project", objs);
 	}
 
@@ -51,7 +52,7 @@ public class MissingReferencesFinder : MonoBehaviour
 		foreach (var go in objects)
 		{
 			var components = go.GetComponents<Component>();
-			
+
 			foreach (var c in components)
 			{
 				// Missing components will be null, we can't find their type, etc.
@@ -60,7 +61,7 @@ public class MissingReferencesFinder : MonoBehaviour
 					Debug.LogError("Missing Component in GO: " + GetFullPath(go), go);
 					continue;
 				}
-				
+
 				SerializedObject so = new SerializedObject(c);
 				var sp = so.GetIterator();
 
@@ -87,14 +88,14 @@ public class MissingReferencesFinder : MonoBehaviour
 			.Where(go => string.IsNullOrEmpty(AssetDatabase.GetAssetPath(go))
 			       && go.hideFlags == HideFlags.None).ToArray();
 	}
-		
+
 	private static void ShowError (string context, GameObject go, string componentName, string propertyName)
 	{
 		var ERROR_TEMPLATE = "Missing Ref in: [{3}]{0}. Component: {1}, Property: {2}";
 
 		Debug.LogError(string.Format(ERROR_TEMPLATE, GetFullPath(go), componentName, propertyName, context), go);
 	}
-	
+
 	private static string GetFullPath(GameObject go)
 	{
 		return go.transform.parent == null
