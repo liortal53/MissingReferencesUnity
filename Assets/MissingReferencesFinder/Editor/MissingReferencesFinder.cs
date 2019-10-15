@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 /// <summary>
@@ -18,7 +19,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	public static void FindMissingReferencesInCurrentScene()
 	{
 		var sceneObjects = GetSceneObjects();
-		FindMissingReferences(EditorApplication.currentScene, sceneObjects);
+		FindMissingReferences(EditorSceneManager.GetActiveScene().path, sceneObjects);
 	}
 
 	/// <summary>
@@ -30,7 +31,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	{
 		foreach (var scene in EditorBuildSettings.scenes.Where(s => s.enabled))
 		{
-			EditorApplication.OpenScene(scene.path);
+			EditorSceneManager.OpenScene(scene.path);
 			FindMissingReferencesInCurrentScene();
 		}
 	}
