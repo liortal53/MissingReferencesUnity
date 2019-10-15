@@ -26,7 +26,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	/// This works by loading the scenes one by one and checking for missing object references.
 	/// </summary>
 	[MenuItem(MENU_ROOT + "Search in all scenes", false, 51)]
-	public static void MissingSpritesInAllScenes()
+	public static void FindMissingReferencesInAllScenes()
 	{
 		foreach (var scene in EditorBuildSettings.scenes.Where(s => s.enabled))
 		{
@@ -39,7 +39,7 @@ public class MissingReferencesFinder : MonoBehaviour
 	/// Finds all missing references to objects in assets (objects from the project window).
 	/// </summary>
 	[MenuItem(MENU_ROOT + "Search in assets", false, 52)]
-	public static void MissingSpritesInAssets()
+	public static void FindMissingReferencesInAssets()
 	{
 		var allAssets = AssetDatabase.GetAllAssetPaths().Where(path => path.StartsWith("Assets/")).ToArray();
 		var objs = allAssets.Select(a => AssetDatabase.LoadAssetAtPath(a, typeof(GameObject)) as GameObject).Where(a => a != null).ToArray();
